@@ -726,11 +726,17 @@
             // Ajouter la couleur de fonction
             element.classList.add(colorClass);
             element.classList.add('revealed');
-            element.classList.add('text-black');
             
             // Mettre à jour le texte du badge
             const badge = element.querySelector('.badge');
             badge.innerText = text;
+            
+            // Appliquer une couleur de fond visible et un texte blanc au badge
+            let badgeBg = 'bg-gray-500';
+            if(colorClass === 'color-sujet') badgeBg = 'bg-blue-500';
+            if(colorClass === 'color-predicat') badgeBg = 'bg-red-500';
+            if(colorClass === 'color-cp') badgeBg = 'bg-green-500';
+            badge.className = `badge text-white shadow-md ${badgeBg}`;
             
             // Petite animation confetti (simulée avec un scale)
             element.style.transform = 'scale(1.1)';
