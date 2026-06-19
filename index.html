@@ -1,0 +1,777 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>La Grammaire Interactive</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&family=Comic+Neue:wght@700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f0fdf4; /* Vert très clair et doux */
+            color: #1f2937;
+        }
+        .title-font {
+            font-family: 'Comic Neue', cursive;
+        }
+        .tab-content {
+            display: none;
+            animation: fadeIn 0.3s ease-in-out;
+        }
+        .tab-content.active {
+            display: block;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        /* Couleurs des fonctions syntaxiques */
+        .color-sujet { background-color: #dbeafe; color: #1e3a8a; border-color: #bfdbfe; }
+        .color-predicat { background-color: #fee2e2; color: #991b1b; border-color: #fecaca; }
+        .color-cp { background-color: #dcfce7; color: #166534; border-color: #bbf7d0; }
+        
+        .interactive-word:hover {
+            transform: scale(1.05);
+            cursor: pointer;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+        }
+        .interactive-word {
+            transition: all 0.2s;
+            margin-bottom: 20px; /* Espace pour les badges sous les mots */
+        }
+        
+        .badge {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 0.85rem;
+            padding: 0;
+            border-radius: 9999px;
+            font-weight: bold;
+            opacity: 0;
+            max-height: 0;
+            transition: all 0.3s ease-in-out;
+            overflow: hidden;
+            
+            /* Disposition absolue sous le mot pour éviter les superpositions */
+            position: absolute;
+            top: 100%;
+            left: 50%;
+            transform: translateX(-50%);
+            white-space: nowrap;
+            z-index: 20;
+        }
+        .revealed .badge {
+            opacity: 1;
+            max-height: 40px;
+            padding: 4px 12px;
+            margin-top: 6px;
+        }
+
+        @keyframes animate-fade-in {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .animate-fade-in {
+            animation: animate-fade-in 0.5s ease-out forwards;
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col">
+
+    <header class="bg-gradient-to-r from-green-400 to-blue-500 text-white shadow-lg py-6 px-4 text-center">
+        <h1 class="text-4xl md:text-5xl font-bold title-font mb-2">
+            <i class="fas fa-magic mr-2"></i> Le Grimoire de la Grammaire
+        </h1>
+        <p class="text-lg md:text-xl font-medium opacity-90">Apprends à analyser tes phrases comme un(e) pro !</p>
+    </header>
+
+    <main class="flex-grow container mx-auto px-4 py-8 max-w-5xl">
+        
+        <nav class="flex flex-wrap justify-center gap-2 mb-8" aria-label="Onglets de navigation">
+            <button onclick="openTab('phrase')" id="btn-phrase" class="tab-btn active px-6 py-3 bg-white text-blue-600 font-bold rounded-full shadow-md border-b-4 border-blue-600 hover:bg-blue-50 transition-colors">
+                <i class="fas fa-layer-group mr-2"></i> La Phrase
+            </button>
+            <button onclick="openTab('groupes')" id="btn-groupes" class="tab-btn px-6 py-3 bg-white text-gray-600 font-bold rounded-full shadow-md border-b-4 border-transparent hover:bg-purple-50 transition-colors">
+                <i class="fas fa-project-diagram mr-2"></i> Les Groupes
+            </button>
+            <button onclick="openTab('manipulations')" id="btn-manipulations" class="tab-btn px-6 py-3 bg-white text-gray-600 font-bold rounded-full shadow-md border-b-4 border-transparent hover:bg-orange-50 transition-colors">
+                <i class="fas fa-tools mr-2"></i> Les Manipulations
+            </button>
+            <button onclick="openTab('pratique')" id="btn-pratique" class="tab-btn px-6 py-3 bg-white text-gray-600 font-bold rounded-full shadow-md border-b-4 border-transparent hover:bg-green-50 transition-colors">
+                <i class="fas fa-gamepad mr-2"></i> Pratique
+            </button>
+        </nav>
+
+        <section id="tab-phrase" class="tab-content active bg-white rounded-2xl shadow-xl p-6 md:p-10 border-t-8 border-blue-500">
+            <h2 class="text-3xl font-bold text-gray-800 mb-6 border-b pb-2"><i class="fas fa-layer-group text-blue-500 mr-2"></i> La Phrase de Base</h2>
+            <p class="text-lg mb-8 text-gray-600">Une phrase de base est construite avec des blocs (les fonctions). Clique sur les blocs ci-dessous pour découvrir leurs secrets !</p>
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
+                <!-- Sujet -->
+                <div class="color-sujet border-2 rounded-xl p-5 shadow-sm transform transition hover:-translate-y-1">
+                    <h3 class="text-xl font-bold mb-3 flex items-center justify-between">
+                        Sujet (S) <i class="fas fa-user-circle text-2xl opacity-50"></i>
+                    </h3>
+                    <ul class="list-disc pl-5 space-y-2 text-sm">
+                        <li>Indique <b>qui fait</b> l'action.</li>
+                        <li>Se remplace par <em>il(s)</em> ou <em>elle(s)</em>.</li>
+                        <li>S'encadre par <em>C'est... qui</em> ou <em>Ce sont... qui</em>.</li>
+                        <li>Ne s'efface <b>pas</b>.</li>
+                        <li>Ne se déplace <b>pas</b>.</li>
+                    </ul>
+                </div>
+
+                <!-- Prédicat -->
+                <div class="color-predicat border-2 rounded-xl p-5 shadow-sm transform transition hover:-translate-y-1">
+                    <h3 class="text-xl font-bold mb-3 flex items-center justify-between">
+                        Prédicat (PR) <i class="fas fa-running text-2xl opacity-50"></i>
+                    </h3>
+                    <ul class="list-disc pl-5 space-y-2 text-sm">
+                        <li>C'est l'action ou ce qu'on dit du sujet.</li>
+                        <li>Contient le <b>verbe conjugué</b>.</li>
+                        <li>Ne s'efface <b>pas</b>.</li>
+                        <li>Ne se déplace <b>pas</b>.</li>
+                    </ul>
+                </div>
+
+                <!-- Complément de phrase -->
+                <div class="color-cp border-2 rounded-xl p-5 shadow-sm transform transition hover:-translate-y-1">
+                    <h3 class="text-xl font-bold mb-3 flex items-center justify-between">
+                        Complément (CP) <i class="fas fa-clock text-2xl opacity-50"></i>
+                    </h3>
+                    <ul class="list-disc pl-5 space-y-2 text-sm">
+                        <li>Ajoute un détail (temps, lieu, but...).</li>
+                        <li>Se remplace parfois par "<em>à cet endroit</em>" ou "<em>alors</em>".</li>
+                        <li>Dédoublable avec <em>et cela se passe...</em> ou <em>et il le fait...</em></li>
+                        <li><b>Peut</b> s'effacer ! <i class="fas fa-eraser"></i></li>
+                        <li><b>Peut</b> se déplacer ! <i class="fas fa-arrows-alt-h"></i></li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="bg-gray-50 rounded-xl p-6 border border-gray-200">
+                <h4 class="font-bold text-gray-700 mb-4 text-center">Exemple interactif :</h4>
+                <div class="flex flex-wrap justify-center gap-3 text-lg md:text-xl font-medium">
+                    <span class="px-4 py-2 color-sujet border rounded-lg cursor-help relative group">
+                        Les enfants de cette classe
+                        <span class="absolute -top-10 left-1/2 transform -translate-x-1/2 bg-blue-800 text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition whitespace-nowrap">Sujet (S)</span>
+                    </span>
+                    <span class="px-4 py-2 color-predicat border rounded-lg cursor-help relative group">
+                        récitent des formules magiques
+                        <span class="absolute -top-10 left-1/2 transform -translate-x-1/2 bg-red-800 text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition whitespace-nowrap">Prédicat (PR)</span>
+                    </span>
+                    <span class="px-4 py-2 color-cp border rounded-lg cursor-help relative group">
+                        à tous les jours.
+                        <span class="absolute -top-10 left-1/2 transform -translate-x-1/2 bg-green-800 text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition whitespace-nowrap">Complément de Phrase (CP)</span>
+                    </span>
+                </div>
+            </div>
+        </section>
+
+        <section id="tab-groupes" class="tab-content bg-white rounded-2xl shadow-xl p-6 md:p-10 border-t-8 border-purple-500">
+            <h2 class="text-3xl font-bold text-gray-800 mb-6 border-b pb-2"><i class="fas fa-project-diagram text-purple-500 mr-2"></i> Les Groupes Syntaxiques</h2>
+            <p class="text-lg mb-8 text-gray-600">Un groupe est une famille de mots. Chaque groupe a un chef qu'on appelle le <b>Noyau</b>.</p>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <!-- GN -->
+                <div class="bg-purple-50 border-2 border-purple-200 rounded-xl p-6 relative overflow-hidden">
+                    <div class="absolute top-0 right-0 bg-purple-200 text-purple-800 font-bold px-4 py-1 rounded-bl-lg">GN</div>
+                    <h3 class="text-2xl font-bold text-purple-800 mb-4">Le Groupe du Nom</h3>
+                    
+                    <div class="bg-white rounded-lg p-4 mb-4 shadow-sm text-center border border-purple-100">
+                        <span class="text-purple-600 font-bold text-xl uppercase tracking-wider block mb-1">Noyau</span>
+                        <span class="font-medium text-lg">Nom ou Pronom</span>
+                    </div>
+
+                    <div class="space-y-4">
+                        <p class="text-sm"><b>Comment le trouver ?</b></p>
+                        <ul class="list-disc pl-5 text-sm space-y-1">
+                            <li>Je peux ajouter un déterminant (la/le, un/une, des) devant.</li>
+                            <li>Je peux le remplacer par un nom que je connais (fleur, jouet).</li>
+                        </ul>
+                        <div class="bg-purple-100 p-3 rounded-lg text-sm text-center font-medium mt-4">
+                            Dét + <span class="text-purple-700 font-bold underline">Nom</span> + Adjectif
+                        </div>
+                        <p class="text-xs text-gray-500 text-center italic mt-2"><i class="fas fa-info-circle"></i> Le nom donne son accord à l'adjectif et au déterminant !</p>
+                    </div>
+                </div>
+
+                <!-- GV -->
+                <div class="bg-orange-50 border-2 border-orange-200 rounded-xl p-6 relative overflow-hidden">
+                    <div class="absolute top-0 right-0 bg-orange-200 text-orange-800 font-bold px-4 py-1 rounded-bl-lg">GV</div>
+                    <h3 class="text-2xl font-bold text-orange-800 mb-4">Le Groupe du Verbe</h3>
+                    
+                    <div class="bg-white rounded-lg p-4 mb-4 shadow-sm text-center border border-orange-100">
+                        <span class="text-orange-600 font-bold text-xl uppercase tracking-wider block mb-1">Noyau</span>
+                        <span class="font-medium text-lg">Verbe</span>
+                    </div>
+
+                    <div class="space-y-4">
+                        <p class="text-sm"><b>Comment le trouver ?</b></p>
+                        <ul class="list-disc pl-5 text-sm space-y-1">
+                            <li><b>Verbe conjugué :</b> Je l'encadre par <em>ne ... pas</em>.</li>
+                            <li><b>Verbe à l'infinitif :</b> J'ajoute <em>ne pas</em> devant.</li>
+                        </ul>
+                        <div class="bg-orange-100 p-3 rounded-lg text-sm text-center font-medium mt-4">
+                            Il s'accorde avec le <span class="text-orange-700 font-bold underline">Sujet</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Exemple GN GV -->
+            <div class="mt-8 bg-gray-100 rounded-xl p-6 text-center">
+                <p class="text-xl font-medium flex flex-wrap justify-center items-center gap-2">
+                    <span class="border-b-2 border-purple-500 pb-1 relative group cursor-pointer">
+                        Jacob
+                        <span class="absolute -top-8 left-1/2 transform -translate-x-1/2 text-xs font-bold bg-purple-600 text-white px-2 rounded opacity-0 group-hover:opacity-100 transition">GN (Noyau)</span>
+                    </span>
+                    <span class="border-b-2 border-orange-500 pb-1 relative group cursor-pointer text-orange-700 font-bold">
+                        mange
+                        <span class="absolute -top-8 left-1/2 transform -translate-x-1/2 text-xs font-bold bg-orange-600 text-white px-2 rounded opacity-0 group-hover:opacity-100 transition">GV (Noyau)</span>
+                    </span>
+                    <span class="border-b-2 border-purple-500 pb-1 relative group cursor-pointer">
+                        des bonbons succulents
+                        <span class="absolute -top-8 left-1/2 transform -translate-x-1/2 text-xs font-bold bg-purple-600 text-white px-2 rounded opacity-0 group-hover:opacity-100 transition">GN</span>
+                    </span>
+                    <span class="pb-1">avec</span>
+                    <span class="border-b-2 border-purple-500 pb-1 relative group cursor-pointer">
+                        ses amis.
+                        <span class="absolute -top-8 left-1/2 transform -translate-x-1/2 text-xs font-bold bg-purple-600 text-white px-2 rounded opacity-0 group-hover:opacity-100 transition">GN</span>
+                    </span>
+                </p>
+                <p class="text-sm text-gray-500 mt-4 italic">Passe ta souris sur les mots de la phrase !</p>
+            </div>
+        </section>
+
+        <section id="tab-manipulations" class="tab-content bg-white rounded-2xl shadow-xl p-6 md:p-10 border-t-8 border-orange-500">
+            <div class="flex items-center justify-between mb-6 border-b pb-2">
+                <h2 class="text-3xl font-bold text-gray-800"><i class="fas fa-tools text-orange-500 mr-2"></i> Les Manipulations Syntaxiques</h2>
+                <i class="fas fa-handshake text-4xl text-gray-300"></i>
+            </div>
+            <p class="text-lg mb-8 text-gray-600">Voici tes <b>outils pour négocier</b> l'orthographe grammaticale ! Clique sur chaque outil pour comprendre son pouvoir et l'essayer.</p>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                
+                <!-- Effacement -->
+                <button onclick="openSimulator('effacement')" class="bg-pink-50 hover:bg-pink-100 border border-pink-200 p-6 rounded-xl text-center transition transform hover:scale-105 shadow-sm text-pink-800">
+                    <i class="fas fa-eraser text-4xl mb-3 block"></i>
+                    <h4 class="font-bold text-lg">L'effacement</h4>
+                </button>
+
+                <!-- Déplacement -->
+                <button onclick="openSimulator('deplacement')" class="bg-blue-50 hover:bg-blue-100 border border-blue-200 p-6 rounded-xl text-center transition transform hover:scale-105 shadow-sm text-blue-800">
+                    <i class="fas fa-car-side text-4xl mb-3 block"></i>
+                    <h4 class="font-bold text-lg">Le déplacement</h4>
+                </button>
+
+                <!-- Remplacement -->
+                <button onclick="openSimulator('remplacement')" class="bg-green-50 hover:bg-green-100 border border-green-200 p-6 rounded-xl text-center transition transform hover:scale-105 shadow-sm text-green-800">
+                    <i class="fas fa-exchange-alt text-4xl mb-3 block"></i>
+                    <h4 class="font-bold text-lg">Le remplacement</h4>
+                </button>
+
+                <!-- Encadrement -->
+                <button onclick="openSimulator('encadrement')" class="bg-yellow-50 hover:bg-yellow-100 border border-yellow-200 p-6 rounded-xl text-center transition transform hover:scale-105 shadow-sm text-yellow-800">
+                    <i class="fas fa-crop-alt text-4xl mb-3 block"></i>
+                    <h4 class="font-bold text-lg">L'encadrement</h4>
+                </button>
+
+                <!-- Ajout -->
+                <button onclick="openSimulator('ajout')" class="bg-purple-50 hover:bg-purple-100 border border-purple-200 p-6 rounded-xl text-center transition transform hover:scale-105 shadow-sm text-purple-800">
+                    <i class="fas fa-plus text-4xl mb-3 block"></i>
+                    <h4 class="font-bold text-lg">L'ajout</h4>
+                </button>
+
+                <!-- Dédoublement -->
+                <button onclick="openSimulator('dedoublement')" class="bg-teal-50 hover:bg-teal-100 border border-teal-200 p-6 rounded-xl text-center transition transform hover:scale-105 shadow-sm text-teal-800">
+                    <i class="fas fa-clone text-4xl mb-3 block"></i>
+                    <h4 class="font-bold text-lg">Le dédoublement</h4>
+                </button>
+
+            </div>
+
+            <!-- Modal for Tool Explanations -->
+            <div id="tool-modal" class="hidden mt-6 bg-gray-800 text-white rounded-xl p-6 relative animate-pulse shadow-inner">
+                <button onclick="closeToolModal()" class="absolute top-4 right-4 text-gray-400 hover:text-white"><i class="fas fa-times text-xl"></i></button>
+                <div class="flex items-start gap-4">
+                    <div class="text-4xl text-yellow-400 bg-gray-700 p-4 rounded-full flex-shrink-0">
+                        <i id="modal-icon" class="fas fa-magic"></i>
+                    </div>
+                    <div class="w-full">
+                        <h3 id="modal-title" class="text-2xl font-bold text-yellow-400 mb-2">Titre</h3>
+                        <div id="modal-content" class="text-gray-200 text-sm md:text-base leading-relaxed w-full">Contenu...</div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="tab-pratique" class="tab-content bg-white rounded-2xl shadow-xl p-6 md:p-10 border-t-8 border-green-500">
+            <h2 class="text-3xl font-bold text-gray-800 mb-2"><i class="fas fa-gamepad text-green-500 mr-2"></i> Zone d'Analyse</h2>
+            <p class="text-gray-600 mb-6">À toi de jouer ! Analyse la phrase en cliquant sur les étiquettes de mots.</p>
+
+            <div class="bg-slate-800 rounded-2xl p-6 md:p-10 shadow-2xl relative overflow-hidden">
+                <!-- Décoration fond -->
+                <i class="fas fa-moon absolute top-4 right-6 text-slate-700 text-6xl"></i>
+                
+                <h3 class="text-center text-white text-xl md:text-2xl font-bold mb-10 relative z-10 font-serif tracking-wide border-b border-slate-600 pb-4">
+                    « Ce matin, le paresseux Timi se promène dans les champs. »
+                </h3>
+
+                <div class="text-center mb-6">
+                    <p class="text-slate-300 text-sm mb-3">Choisis ce que tu veux identifier :</p>
+                    <div class="inline-flex bg-slate-700 rounded-lg p-1 gap-1">
+                        <button onclick="setQuizMode('fonctions')" id="btn-mode-fonctions" class="px-4 py-2 rounded-md bg-green-500 text-white font-bold shadow transition text-sm">Les Fonctions (S, PR, CP)</button>
+                        <button onclick="setQuizMode('classes')" id="btn-mode-classes" class="px-4 py-2 rounded-md text-slate-300 hover:text-white hover:bg-slate-600 transition text-sm">Classes des mots</button>
+                    </div>
+                </div>
+
+                <!-- Zone interactive: Fonctions -->
+                <div id="quiz-fonctions" class="flex flex-wrap justify-center gap-4 py-4 min-h-[150px] items-center transition-opacity duration-300">
+                    <button onclick="revealFunction(this, 'color-cp', 'Complément de Phrase (CP)')" class="interactive-word bg-slate-600 text-white px-5 py-3 rounded-xl border-2 border-slate-500 font-medium text-lg relative group">
+                        Ce matin
+                        <span class="badge bg-green-500 text-white"></span>
+                    </button>
+                    <span class="text-white text-2xl mt-2">,</span>
+                    <button onclick="revealFunction(this, 'color-sujet', 'Sujet (S) - [GN]')" class="interactive-word bg-slate-600 text-white px-5 py-3 rounded-xl border-2 border-slate-500 font-medium text-lg relative group">
+                        le paresseux Timi
+                        <span class="badge bg-blue-500 text-white"></span>
+                    </button>
+                    <button onclick="revealFunction(this, 'color-predicat', 'Prédicat (PR) - [GV]')" class="interactive-word bg-slate-600 text-white px-5 py-3 rounded-xl border-2 border-slate-500 font-medium text-lg relative group">
+                        se promène dans les champs.
+                        <span class="badge bg-red-500 text-white"></span>
+                    </button>
+                </div>
+
+                <!-- Zone interactive: Classes de mots -->
+                <div id="quiz-classes" class="hidden flex flex-wrap justify-center gap-3 py-4 min-h-[150px] items-center transition-opacity duration-300">
+                    <button onclick="revealClass(this, 'Dét.', 'bg-gray-400')" class="interactive-word bg-slate-600 text-white px-3 py-2 rounded-lg font-medium relative">
+                        Ce <span class="badge"></span>
+                    </button>
+                    <button onclick="revealClass(this, 'Nom', 'bg-purple-500')" class="interactive-word bg-slate-600 text-white px-3 py-2 rounded-lg font-medium relative">
+                        matin <span class="badge"></span>
+                    </button>
+                    <span class="text-white text-xl">,</span>
+                    <button onclick="revealClass(this, 'Dét.', 'bg-gray-400')" class="interactive-word bg-slate-600 text-white px-3 py-2 rounded-lg font-medium relative ml-2">
+                        le <span class="badge"></span>
+                    </button>
+                    <button onclick="revealClass(this, 'Adj.', 'bg-yellow-500')" class="interactive-word bg-slate-600 text-white px-3 py-2 rounded-lg font-medium relative">
+                        paresseux <span class="badge"></span>
+                    </button>
+                    <button onclick="revealClass(this, 'Nom (Propre)', 'bg-purple-500')" class="interactive-word bg-slate-600 text-white px-3 py-2 rounded-lg font-medium relative">
+                        Timi <span class="badge"></span>
+                    </button>
+                    <button onclick="revealClass(this, 'Verbe', 'bg-orange-500')" class="interactive-word bg-slate-600 text-white px-3 py-2 rounded-lg font-medium relative ml-2">
+                        se promène <span class="badge"></span>
+                    </button>
+                    <button onclick="revealClass(this, 'Prép.', 'bg-indigo-500')" class="interactive-word bg-slate-600 text-white px-3 py-2 rounded-lg font-medium relative ml-2">
+                        dans <span class="badge"></span>
+                    </button>
+                    <button onclick="revealClass(this, 'Dét.', 'bg-gray-400')" class="interactive-word bg-slate-600 text-white px-3 py-2 rounded-lg font-medium relative">
+                        les <span class="badge"></span>
+                    </button>
+                    <button onclick="revealClass(this, 'Nom', 'bg-purple-500')" class="interactive-word bg-slate-600 text-white px-3 py-2 rounded-lg font-medium relative">
+                        champs <span class="badge"></span>
+                    </button>
+                </div>
+                
+                <div class="text-center mt-6">
+                    <button onclick="resetQuiz()" class="text-slate-400 hover:text-white text-sm underline"><i class="fas fa-undo"></i> Recommencer l'analyse</button>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <footer class="bg-gray-800 text-gray-400 text-center py-6 mt-auto">
+        <p>Inspiré du document de Josianne Parent, orthopédagogue.</p>
+        <p class="text-sm mt-2"><i class="fas fa-star text-yellow-400"></i> Outil interactif pour les élèves</p>
+    </footer>
+
+    <script>
+        // Logique de navigation des onglets
+        function openTab(tabId) {
+            // Masquer tous les contenus
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+            
+            // Réinitialiser les boutons d'onglets
+            document.querySelectorAll('.tab-btn').forEach(el => {
+                el.classList.remove('text-blue-600', 'border-blue-600', 'text-purple-600', 'border-purple-600', 'text-orange-600', 'border-orange-600', 'text-green-600', 'border-green-600');
+                el.classList.add('text-gray-600', 'border-transparent');
+            });
+
+            // Afficher le contenu ciblé
+            document.getElementById('tab-' + tabId).classList.add('active');
+
+            // Styliser le bouton actif
+            const activeBtn = document.getElementById('btn-' + tabId);
+            activeBtn.classList.remove('text-gray-600', 'border-transparent');
+            
+            if(tabId === 'phrase') activeBtn.classList.add('text-blue-600', 'border-blue-600');
+            if(tabId === 'groupes') activeBtn.classList.add('text-purple-600', 'border-purple-600');
+            if(tabId === 'manipulations') activeBtn.classList.add('text-orange-600', 'border-orange-600');
+            if(tabId === 'pratique') activeBtn.classList.add('text-green-600', 'border-green-600');
+        }
+
+        // Données des simulateurs interactifs
+        const simulatorsData = {
+            'effacement': {
+                title: "L'effacement",
+                iconClass: "fa-eraser",
+                desc: "Je regarde si je peux enlever le mot de la phrase sans qu'elle perde son sens grammatical.<br><br><b>OUI :</b> Le CP (Complément de phrase) et l'Adjectif peuvent s'effacer.<br><b>NON <i class='fas fa-times text-red-500'></i> :</b> Le Sujet et le Nom ne s'effacent pas.",
+                simHtml: `
+                    <div class="mt-4 p-5 bg-slate-900 rounded-xl shadow-inner text-left">
+                        <div class="mb-6">
+                            <p class="text-slate-300 text-sm mb-2">1. Clique sur l'adjectif pour l'effacer :</p>
+                            <div class="text-lg md:text-xl font-serif text-white bg-slate-800 p-3 rounded-lg inline-block">
+                                Le <span class="cursor-pointer text-pink-400 font-bold hover:bg-slate-700 px-2 py-1 rounded transition-all duration-500 inline-block" onclick="this.style.width='0px'; this.style.opacity='0'; this.style.padding='0'; this.style.margin='0'; this.style.fontSize='0px'; setTimeout(() => document.getElementById('sim-fb-eff-1').classList.remove('hidden'), 500)">gigantesque</span> dinosaure mange.
+                            </div>
+                            <p id="sim-fb-eff-1" class="hidden mt-2 text-green-400 font-bold animate-fade-in text-sm"><i class="fas fa-check-circle"></i> L'adjectif s'efface bien.</p>
+                        </div>
+                        <div class="border-t border-slate-700 pt-4">
+                            <p class="text-slate-300 text-sm mb-2">2. Clique sur le Complément de Phrase (CP) pour l'effacer :</p>
+                            <div class="text-lg md:text-xl font-serif text-white bg-slate-800 p-3 rounded-lg inline-block">
+                                <span class="cursor-pointer text-green-400 font-bold hover:bg-slate-700 px-2 py-1 rounded transition-all duration-500 inline-block" onclick="this.style.width='0px'; this.style.opacity='0'; this.style.padding='0'; this.style.margin='0'; this.style.fontSize='0px'; document.getElementById('eff-cp-cap').innerText = 'L'; setTimeout(() => document.getElementById('sim-fb-eff-2').classList.remove('hidden'), 500)">Ce matin, </span><span id="eff-cp-cap" class="transition-all duration-300">l</span>es élèves étudient.
+                            </div>
+                            <p id="sim-fb-eff-2" class="hidden mt-2 text-green-400 font-bold animate-fade-in text-sm"><i class="fas fa-check-circle"></i> Le CP s'efface et la majuscule s'ajuste !</p>
+                        </div>
+                    </div>
+                `
+            },
+            'deplacement': {
+                title: "Le déplacement",
+                iconClass: "fa-car-side",
+                desc: "Je prends un groupe de mots et je le mets ailleurs dans la phrase (souvent au début ou à la fin).<br><br><b>OUI :</b> Le CP (Complément de phrase) se déplace.<br><b>NON <i class='fas fa-times text-red-500'></i> :</b> Le Sujet ne se déplace pas.",
+                simHtml: `
+                    <div class="mt-4 p-5 bg-slate-900 rounded-xl shadow-inner text-left">
+                        <div class="mb-6">
+                            <p class="text-slate-300 text-sm mb-2">1. Déplacer à la fin (Clique sur le CP) :</p>
+                            <div class="text-lg md:text-xl font-serif text-white bg-slate-800 p-3 rounded-lg flex flex-wrap items-center gap-2">
+                                <span id="sim-dep-mot-1" class="cursor-pointer text-blue-400 font-bold hover:bg-slate-700 px-2 py-1 rounded transition-all duration-300 border border-blue-400 border-dashed" onclick="simulerDeplacement(1)">Chaque nuit,</span>
+                                <span><span id="sim-dep-cap-1" class="transition-all duration-300">l</span>e hibou chasse</span>
+                                <span id="sim-dep-target-1" class="w-10 border-b-2 border-dashed border-slate-500 transition-all duration-500"></span>
+                            </div>
+                            <p id="sim-fb-dep-1" class="hidden mt-2 text-green-400 font-bold animate-fade-in text-sm"><i class="fas fa-check-circle"></i> La majuscule s'ajuste et la phrase garde son sens !</p>
+                        </div>
+                        <div class="border-t border-slate-700 pt-4">
+                            <p class="text-slate-300 text-sm mb-2">2. Déplacer au début (Clique sur le CP) :</p>
+                            <div class="text-lg md:text-xl font-serif text-white bg-slate-800 p-3 rounded-lg flex flex-wrap items-center gap-2">
+                                <span id="sim-dep-target-2" class="w-10 border-b-2 border-dashed border-slate-500 transition-all duration-500"></span>
+                                <span><span id="sim-dep-cap-2" class="transition-all duration-300">L</span>es enfants courent</span>
+                                <span id="sim-dep-mot-2" class="cursor-pointer text-blue-400 font-bold hover:bg-slate-700 px-2 py-1 rounded transition-all duration-300 border border-blue-400 border-dashed" onclick="simulerDeplacement(2)">dans la cour.</span>
+                            </div>
+                            <p id="sim-fb-dep-2" class="hidden mt-2 text-green-400 font-bold animate-fade-in text-sm"><i class="fas fa-check-circle"></i> Le CP se place au début avec une belle majuscule !</p>
+                        </div>
+                    </div>
+                `
+            },
+            'remplacement': {
+                title: "Le remplacement",
+                iconClass: "fa-exchange-alt",
+                desc: "Je remplace un mot par un autre que je connais bien.<br><br><b>Exemples :</b><br>- Un nom par un autre nom (ex: ami).<br>- Un adjectif par un autre (ex: beau).<br>- Le sujet par <i>Il/Ils</i> ou <i>Elle/Elles</i>.",
+                simHtml: `
+                    <div class="mt-4 p-5 bg-slate-900 rounded-xl shadow-inner text-left max-h-80 overflow-y-auto">
+                        <div class="mb-5">
+                            <p class="text-slate-300 text-sm mb-2">1. Préciser un mot général (Clique sur le nom) :</p>
+                            <div class="text-lg md:text-xl font-serif text-white bg-slate-800 p-3 rounded-lg inline-block">
+                                L'écureuil grimpe dans <span id="sim-rep-det-1" class="transition-all duration-300">cet</span> <span id="sim-rep-mot-1" class="cursor-pointer text-green-400 font-bold hover:bg-slate-700 px-2 py-1 rounded transition-all duration-300 border border-green-400 border-dashed inline-block" onclick="simulerRemplacement(1)">arbre</span>.
+                            </div>
+                            <p id="sim-fb-rep-1" class="hidden mt-2 text-green-400 font-bold animate-fade-in text-sm"><i class="fas fa-check-circle"></i> Le mot "chêne" est précis et le déterminant s'ajuste (cet → ce) !</p>
+                        </div>
+
+                        <div class="border-t border-slate-700 pt-4 mb-5">
+                            <p class="text-slate-300 text-sm mb-2 flex justify-between items-center">
+                                <span>2. Varier avec des substituts :</span>
+                                <span class="text-xs bg-slate-700 px-2 py-1 rounded text-slate-300">Clique plusieurs fois!</span>
+                            </p>
+                            <div class="text-lg md:text-xl font-serif text-white bg-slate-800 p-3 rounded-lg inline-block">
+                                <span id="sim-rep-mot-2" class="cursor-pointer text-green-400 font-bold hover:bg-slate-700 px-2 py-1 rounded transition-all duration-300 border border-green-400 border-dashed inline-block" onclick="simulerRemplacement(2)">Il</span> mange une pomme.
+                            </div>
+                            <p id="sim-fb-rep-2" class="hidden mt-2 text-green-400 font-bold animate-fade-in text-sm"><i class="fas fa-check-circle"></i> Les substituts (noms précis) évitent les répétitions !</p>
+                        </div>
+
+                        <div class="border-t border-slate-700 pt-4">
+                            <p class="text-slate-300 text-sm mb-2">3. Remplacer un Sujet par un pronom :</p>
+                            <div class="text-lg md:text-xl font-serif text-white bg-slate-800 p-3 rounded-lg inline-block">
+                                <span id="sim-rep-mot-3" class="cursor-pointer text-green-400 font-bold hover:bg-slate-700 px-2 py-1 rounded transition-all duration-300 border border-green-400 border-dashed inline-block" onclick="simulerRemplacement(3)">Les sorcières</span> préparent une potion.
+                            </div>
+                            <p id="sim-fb-rep-3" class="hidden mt-2 text-green-400 font-bold animate-fade-in text-sm"><i class="fas fa-check-circle"></i> Le pronom "Elles" remplace le groupe sujet.</p>
+                        </div>
+                    </div>
+                `
+            },
+            'encadrement': {
+                title: "L'encadrement",
+                iconClass: "fa-crop-alt",
+                desc: "Je mets des mots de chaque côté pour vérifier sa fonction.<br><br>- <b>Le Sujet :</b> S'encadre par <i>C'est ... qui</i> ou <i>Ce sont ... qui</i>.<br>- <b>Le Verbe :</b> S'encadre par <i>Ne ... pas</i> ou <i>N' ... pas</i>.",
+                simHtml: `
+                    <div class="mt-4 p-5 bg-slate-900 rounded-xl shadow-inner text-center">
+                        <p class="text-slate-300 text-sm mb-4">Clique sur le Verbe pour l'encadrer avec la négation :</p>
+                        <div class="text-xl md:text-2xl font-serif text-white bg-slate-800 p-4 rounded-lg flex flex-wrap justify-center items-center gap-1">
+                            <span>Le fantôme</span>
+                            <span id="sim-enc-1" class="text-yellow-400 font-bold text-lg w-0 overflow-hidden opacity-0 transition-all duration-300">ne</span>
+                            <span class="cursor-pointer text-white font-bold hover:text-yellow-200 transition-colors duration-300 underline decoration-dashed decoration-yellow-500" onclick="simulerEncadrement()">traverse</span>
+                            <span id="sim-enc-2" class="text-yellow-400 font-bold text-lg w-0 overflow-hidden opacity-0 transition-all duration-300">pas</span>
+                            <span>le mur.</span>
+                        </div>
+                        <p id="sim-fb-enc" class="hidden mt-4 text-green-400 font-bold animate-fade-in"><i class="fas fa-check-circle"></i> Le verbe s'encadre avec "ne ... pas" !</p>
+                    </div>
+                `
+            },
+            'ajout': {
+                title: "L'ajout",
+                iconClass: "fa-plus",
+                desc: "J'ajoute un petit mot devant pour vérifier la classe.<br><br>- J'ajoute <b>TRÈS</b> devant pour trouver un <b>Adjectif</b>.<br>- J'ajoute <b>UN/UNE</b> ou <b>LA/LE/LES/DES</b> devant pour trouver un <b>Nom</b>.",
+                simHtml: `
+                    <div class="mt-4 p-5 bg-slate-900 rounded-xl shadow-inner text-center">
+                        <p class="text-slate-300 text-sm mb-4">Clique sur le symbole "+" pour ajouter un adjectif riche et précis :</p>
+                        <div class="text-xl md:text-2xl font-serif text-white bg-slate-800 p-4 rounded-lg flex justify-center items-center gap-2">
+                            <span>Le</span>
+                            <span id="sim-ajout-mot" class="cursor-pointer text-purple-400 font-bold hover:bg-slate-700 px-3 py-1 rounded transition-all duration-500 border border-purple-400 border-dashed bg-slate-900 inline-block" onclick="simulerAjout()">+</span>
+                            <span>chevalier attaque le dragon.</span>
+                        </div>
+                        <p id="sim-fb-ajout" class="hidden mt-4 text-green-400 font-bold animate-fade-in"><i class="fas fa-check-circle"></i> Wow ! L'adjectif "courageux" s'insère parfaitement et enrichit la phrase !</p>
+                    </div>
+                `
+            },
+            'dedoublement': {
+                title: "Le dédoublement",
+                iconClass: "fa-clone",
+                desc: "J'ajoute une expression à la fin de la phrase pour vérifier un complément.<br><br>Je peux dédoubler le Complément de phrase avec :<br><i>... et il le fait [CP]</i><br><i>... et cela se passe [CP]</i>",
+                simHtml: `
+                    <div class="mt-4 p-5 bg-slate-900 rounded-xl shadow-inner text-center">
+                        <p class="text-slate-300 text-sm mb-4">Clique sur le bouton pour dédoubler le Complément de Phrase :</p>
+                        <div class="text-xl md:text-2xl font-serif text-white bg-slate-800 p-4 rounded-lg block">
+                            <span>L'élève lit son livre</span>
+                            <span class="text-teal-300 font-bold">en silence.</span>
+                            <span id="sim-ded-target" class="text-teal-400 font-bold text-lg hidden mt-2 block animate-fade-in"></span>
+                        </div>
+                        <button onclick="simulerDedoublement()" class="mt-4 bg-teal-600 hover:bg-teal-500 text-white px-4 py-2 rounded-full text-sm font-bold shadow-lg transition transform hover:scale-105"><i class="fas fa-clone"></i> Dédoubler le CP</button>
+                        <p id="sim-fb-ded" class="hidden mt-4 text-green-400 font-bold animate-fade-in"><i class="fas fa-check-circle"></i> Exactement ! On peut dire "... et il le fait en silence."</p>
+                    </div>
+                `
+            }
+        };
+
+        // Logique pour la modal et les simulateurs
+        function openSimulator(key) {
+            const data = simulatorsData[key];
+            const modal = document.getElementById('tool-modal');
+            
+            document.getElementById('modal-title').innerText = data.title;
+            document.getElementById('modal-icon').className = `fas ${data.iconClass}`;
+            document.getElementById('modal-content').innerHTML = data.desc + data.simHtml;
+            
+            modal.classList.remove('hidden');
+            // Animation flash
+            modal.classList.remove('animate-pulse');
+            void modal.offsetWidth; // trigger reflow
+            modal.classList.add('animate-pulse');
+            setTimeout(() => modal.classList.remove('animate-pulse'), 1000);
+        }
+
+        function closeToolModal() {
+            document.getElementById('tool-modal').classList.add('hidden');
+        }
+
+        // Fonctions d'action des simulateurs
+        function simulerDeplacement(id) {
+            if (id === 1) {
+                const mot = document.getElementById('sim-dep-mot-1');
+                const target = document.getElementById('sim-dep-target-1');
+                const cap = document.getElementById('sim-dep-cap-1');
+                
+                mot.style.opacity = '0';
+                mot.style.width = '0px';
+                mot.style.padding = '0px';
+                mot.style.margin = '0px';
+                mot.style.overflow = 'hidden';
+                mot.style.border = 'none';
+                
+                setTimeout(() => {
+                    cap.innerText = "L"; // Ajustement majuscule
+                    target.innerText = " chaque nuit.";
+                    target.classList.remove('w-10', 'border-b-2', 'border-dashed', 'border-slate-500');
+                    target.classList.add('text-blue-400', 'font-bold', 'px-2');
+                    document.getElementById('sim-fb-dep-1').classList.remove('hidden');
+                }, 300);
+            } else if (id === 2) {
+                const mot = document.getElementById('sim-dep-mot-2');
+                const target = document.getElementById('sim-dep-target-2');
+                const cap = document.getElementById('sim-dep-cap-2');
+                
+                mot.style.opacity = '0';
+                mot.style.width = '0px';
+                mot.style.padding = '0px';
+                mot.style.margin = '0px';
+                mot.style.overflow = 'hidden';
+                mot.style.border = 'none';
+                
+                setTimeout(() => {
+                    cap.innerText = "l"; // Ajustement minuscule
+                    target.innerText = "Dans la cour, ";
+                    target.classList.remove('w-10', 'border-b-2', 'border-dashed', 'border-slate-500');
+                    target.classList.add('text-blue-400', 'font-bold', 'px-2');
+                    document.getElementById('sim-fb-dep-2').classList.remove('hidden');
+                }, 300);
+            }
+        }
+
+        let rep2Index = 0;
+        const rep2Options = ["Le garçon", "Mon petit frère", "L'ogre féroce", "Le professeur", "Ce jeune athlète"];
+
+        function simulerRemplacement(id) {
+            const mot = document.getElementById('sim-rep-mot-' + id);
+            mot.style.opacity = '0';
+            
+            setTimeout(() => {
+                if (id === 1) {
+                    mot.innerText = "chêne";
+                    const det = document.getElementById('sim-rep-det-1');
+                    if(det) {
+                        det.style.opacity = '0';
+                        setTimeout(() => {
+                            det.innerText = "ce";
+                            det.style.opacity = '1';
+                        }, 150);
+                    }
+                    document.getElementById('sim-fb-rep-1').classList.remove('hidden');
+                } else if (id === 2) {
+                    mot.innerText = rep2Options[rep2Index % rep2Options.length];
+                    rep2Index++;
+                    document.getElementById('sim-fb-rep-2').classList.remove('hidden');
+                } else if (id === 3) {
+                    mot.innerText = "Elles";
+                    document.getElementById('sim-fb-rep-3').classList.remove('hidden');
+                }
+                
+                mot.classList.replace('text-green-400', 'text-yellow-400');
+                mot.classList.remove('border-dashed', 'border-green-400');
+                mot.style.opacity = '1';
+            }, 300);
+        }
+
+        function simulerEncadrement() {
+            const v1 = document.getElementById('sim-enc-1');
+            const v2 = document.getElementById('sim-enc-2');
+            
+            v1.style.width = '30px';
+            v1.style.opacity = '1';
+            v1.style.marginRight = '8px';
+            
+            v2.style.width = '35px';
+            v2.style.opacity = '1';
+            v2.style.marginLeft = '8px';
+            
+            setTimeout(() => {
+                document.getElementById('sim-fb-enc').classList.remove('hidden');
+            }, 300);
+        }
+
+        function simulerAjout() {
+            const mot = document.getElementById('sim-ajout-mot');
+            mot.style.opacity = '0';
+            setTimeout(() => {
+                mot.innerText = "courageux";
+                mot.classList.remove('bg-slate-900', 'border', 'border-dashed');
+                mot.style.opacity = '1';
+                document.getElementById('sim-fb-ajout').classList.remove('hidden');
+            }, 300);
+        }
+
+        function simulerDedoublement() {
+            const target = document.getElementById('sim-ded-target');
+            target.innerText = "... et il le fait en silence.";
+            target.classList.remove('hidden');
+            document.getElementById('sim-fb-ded').classList.remove('hidden');
+        }
+
+        // Logique pour l'onglet Pratique Interactive
+        function setQuizMode(mode) {
+            const btnFonctions = document.getElementById('btn-mode-fonctions');
+            const btnClasses = document.getElementById('btn-mode-classes');
+            const divFonctions = document.getElementById('quiz-fonctions');
+            const divClasses = document.getElementById('quiz-classes');
+
+            resetQuiz(); // Reset elements when switching
+
+            if (mode === 'fonctions') {
+                btnFonctions.classList.replace('text-slate-300', 'text-white');
+                btnFonctions.classList.replace('hover:bg-slate-600', 'bg-green-500');
+                btnClasses.classList.replace('bg-green-500', 'hover:bg-slate-600');
+                btnClasses.classList.replace('text-white', 'text-slate-300');
+                
+                divFonctions.classList.remove('hidden');
+                divClasses.classList.add('hidden');
+            } else {
+                btnClasses.classList.replace('text-slate-300', 'text-white');
+                btnClasses.classList.replace('hover:bg-slate-600', 'bg-green-500');
+                btnFonctions.classList.replace('bg-green-500', 'hover:bg-slate-600');
+                btnFonctions.classList.replace('text-white', 'text-slate-300');
+
+                divClasses.classList.remove('hidden');
+                divFonctions.classList.add('hidden');
+            }
+        }
+
+        function revealFunction(element, colorClass, text) {
+            if(element.classList.contains('revealed')) return; // Déjà cliqué
+            
+            // Retirer le style par défaut
+            element.classList.remove('bg-slate-600', 'text-white', 'border-slate-500');
+            // Ajouter la couleur de fonction
+            element.classList.add(colorClass);
+            element.classList.add('revealed');
+            element.classList.add('text-black');
+            
+            // Mettre à jour le texte du badge
+            const badge = element.querySelector('.badge');
+            badge.innerText = text;
+            
+            // Petite animation confetti (simulée avec un scale)
+            element.style.transform = 'scale(1.1)';
+            setTimeout(() => { element.style.transform = 'scale(1)'; }, 200);
+        }
+
+        function revealClass(element, className, badgeColorClass) {
+             if(element.classList.contains('revealed')) return;
+             
+             element.classList.remove('bg-slate-600');
+             element.classList.add('bg-slate-200', 'text-slate-800');
+             element.classList.add('revealed');
+
+             const badge = element.querySelector('.badge');
+             badge.className = `badge text-white shadow-md ${badgeColorClass}`;
+             badge.innerText = className;
+             
+             element.style.transform = 'scale(1.1)';
+             setTimeout(() => { element.style.transform = 'scale(1)'; }, 200);
+        }
+
+        function resetQuiz() {
+            // Reset Fonctions
+            const fonctionElements = document.querySelectorAll('#quiz-fonctions .interactive-word');
+            fonctionElements.forEach(el => {
+                el.className = 'interactive-word bg-slate-600 text-white px-5 py-3 rounded-xl border-2 border-slate-500 font-medium text-lg relative group transition-all duration-300';
+                const badge = el.querySelector('.badge');
+                badge.innerText = '';
+                // Réinitialiser la couleur du badge générique (sera écrasée mais nécessaire pour la propreté)
+                badge.className = 'badge'; 
+            });
+
+            // Reset Classes
+            const classElements = document.querySelectorAll('#quiz-classes .interactive-word');
+            classElements.forEach(el => {
+                el.className = 'interactive-word bg-slate-600 text-white px-3 py-2 rounded-lg font-medium relative transition-all duration-300';
+                const badge = el.querySelector('.badge');
+                badge.innerText = '';
+                badge.className = 'badge';
+            });
+        }
+    </script>
+</body>
+</html>
